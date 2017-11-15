@@ -6,9 +6,19 @@ Lecture on Thursday 12:10 in SU1.
 Resources
 ---------
 
+### Haskell
+
 - [Learn You a Haskell for Great Good](http://learnyouahaskell.com/)
 - [Real World Haskell](http://book.realworldhaskell.org/)
 - [Haskell Wikibook](https://en.wikibooks.org/wiki/Haskell)
+
+### Lambda calculus
+
+- [Introduction to the lambda calculus](http://www.inf.fu-berlin.de/lehre/WS03/alpi/lambda.pdf)
+- [Notes on ipmlementing lambda calculus](http://dev.stephendiehl.com/fun/003_lambda_calculus.html)
+- [An easy to read blog post about reduction strategies](http://seanbowman.me/blog/lambda-calculus-reduction/)
+- [A concise way of performing substitution and beta-reduction in de Bruijn representation of lambda terms](https://github.com/Gabriel439/Haskell-Morte-Library/issues/1)
+- [Article on combinatory logic containing the abstraction elimination  technique discussed on the lecture (Combinatory calculi -> Completeness of the S-K basis)](https://en.wikipedia.org/wiki/Combinatory_logic)
 
 Programming Tools
 -----------------
@@ -26,3 +36,16 @@ Exam will cover topics discussed during the semester, form of the exam (written 
 The programming task involves creating a simple evaluator and a type inference engine for one of the lambda calculus variations discussed in lectures, further specifications will be given in the form of assignments during the semester.
 
 
+Programming task
+----------------
+
+### Homework #1
+
+- Choose your favorite lambda term representation and define the appropriate data type for the representation. You can choose either:
+   - straightforward lambda terms representation
+   - lambda terms representation using [De Bruijn indices](https://en.wikipedia.org/wiki/De_Bruijn_index) 
+- Implement *substitution* and *beta-reduction*. You have two options here:
+  - Implement *substitution* and *beta-reduction* directly for your representation of lambda terms. 
+  - Or you can choose alternative (or bonus) approach: Avoid problems dealing with bound variables by using *abstraction elimination* to transform lambda terms to simpler combinator terms. See [wikipedia article on combinatory logic](https://en.wikipedia.org/wiki/Combinatory_logic) containing description of the *abstraction elimination* technique discussed on the lecture (section Combinatory calculi -> Completeness of the S-K basis).
+
+- Implement the *normal reduction strategy*.
