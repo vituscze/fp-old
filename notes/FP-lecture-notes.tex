@@ -41,12 +41,9 @@
 }
 
 
-
-
-
 %\usepackage{enumitem}
 
-\title{Some FP lecture notes (v0.3)}
+\title{Some FP lecture notes (v0.5)}
 
 \author{Tomáš Křen}
 
@@ -146,13 +143,6 @@
 
 
 
-
-
-
-
-
-
-
 \newcommand{\inhab}[1]{\op{I}(#1)}
 
 \newcommand{\tord}{\preccurlyeq}
@@ -191,14 +181,7 @@
 \newcommand{\IH}{induction hypothesis\xspace}
 \newcommand{\discup}{~\mathbin{\dot{\cup}}~}
 
-
-
-
-
-
-\chapter{Hindley-Milner type system}
-
-\red{\textbf{Still work in progress... but the sections about Hindley-Milner algorithm W are almost OK now.}}
+\newcommand{\Real}{\mathbb{R}}
 
 \newcommand{\letin}[3]{\texttt{let} \, #1 = #2 \, \texttt{in} \, #3}
 \newcommand{\W}{\op{\textbf{W}}}
@@ -207,18 +190,138 @@
 \newcommand{\SPr}{S^\prime}
 
 
+\chapter{Hindley-Milner Type System}
+
+\red{\textbf{Still work in progress... but the sections about Hindley-Milner algorithm W are almost OK now.}}
+
+
+\section*{TODO list}
+
+\red{
+\begin{itemize}
+\item Describe substitutions
+\item Textually describe unification algorithm
+\item Define rest of the context stuff
+\item In W definition : need to comment the need for fresh type variables $\beta$s
+\item In W definition : need to comment that when sub-call fail, then also the calling computation fails
+\item write Intro
+\end{itemize}
+}
+
 \section{Introduction}
 
 \red{Why Hindley-Milner (= simplified system F capable of type inference in curry style)}
 
+\section{Type Language}
+\label{sec:typelang}
 
-\section{Language of type expressions}
+\red{replace simple-type with mono-type}
 
-\red{Explain simple types and type schemes.}
+A type system connects a type language with a program language.
+In this section we present the type language (i.e. what are legal type expressions and what are they supposed to mean) used in Hindley-Milner type system.
 
-\section{Type substitutions}
+We start with a subset of the language, \textit{simple-types}.
+The whole language is obtained by enriching the simple-types with polymorphism.
+
+Language of simple-types consists of tree type constructs, a simple-type is either: 
+a type \textit{symbol}, 
+a type \textit{term}, 
+or a type \textit{variable}.
+Let us have a closer look on each of the constructs.
+
+A~\textit{type symbol} is a symbol of a specific basic type, such as 
+$Int$, $Bool$, $String$, or $\Real$ (which are all inhabited by values); 
+or a symbol of a specific parametric type such as $List$ or $\ar$ 
+which are not inhabited. These uninhabited symbols serve as "functions over types" 
+and need one or more types as type parameters. For example, in $(List~Int)$
+or $(Int \ar Bool)$, we need to know what elements does the list have, 
+or what is the function's domain and co-domain. Type symbol is written as 
+a single capitalized word.
+
+A~\textit{type term} is a construct for creating compound types given 
+by a sequence of types, e.g., $(List~Int)$, or $(Int \ar Bool)$. 
+Type term construct is a basis for construction of \textit{parametric} types,
+which are generally written as a parenthesized sequence of type expressions, 
+i.e. $(\tau_1~\tau_2~\dots~\tau_n)$, where $\tau_i$ are arbitrary 
+simple-type expressions.
+
+A~\textit{type variable} is a construct representing a type which has not been fully
+specified yet. For instance, $\alpha$, $\beta_1$ and $\beta_2$ are type variables.
+Type variables form \textit{polymorphic} types, 
+e.g. $(List~\alpha)$, standing for a list of every (not yet specified) type. For instance,
+this list is inhabited by an empty list, $[~] : (List~\alpha)$.
+Other example of polymorphic type includes $(\alpha \ar \alpha)$ which stands for an unary 
+operation over every type, for instance inhabited by
+an identity function $id : \alpha \ar \alpha$. 
+But not all polymorphic types are inhabited, e.g., there is no reasonable program having 
+type $(\alpha \ar \beta)$ since there is no function such that it is from any type to any other 
+type. 
+In this text, type variables are written as Greek letters from the beginning of the alphabet ($\alpha$ and $\beta$ with possible index, e.g. $\beta_{42}$); 
+in Haskell a type variable is written as a single lowercase word, usually one character long.
+
+We get the full type language by adding \textit{poly-types} (from \textit{polymorphic}). Poly-types  are created by use of the fourth type construct: the universal quantification using $\forall$. 
+
+More specifically we can take any type expression $\sigma$ (simple-type or poly-type) and make 
+it a poly-type by prefixing it with a quantification of one type variable (which usually appears inside $\sigma$). If the quantified type variable is $\alpha$, then the newly created poly-type expression is $\forall \alpha . \sigma$. All the occurrences of $\alpha$ inside $\forall \alpha . \sigma$ are said to be \textit{bound}, as opposed to \textit{free}.
+
+% Roughly speaking, when a type variable is quantified in a poly-type it means that any type can be plugged inside instead of this    
+
+Here is a subtle and confusing yet very important difference between the way how polymorphic types 
+are written in Haskell type language and in Hindley-Milner type language, simply said:
+
+~
+
+\textbf{In Haskell all the type variables in polymorphic types are implicitly quantified.} 
+
+~
+
+For example the \texttt{map} function has Haskell type \texttt{(a -> b) -> [a] -> [b]},
+or we can pretend that it is \texttt{(a -> b) -> (List a) -> (List b)} to be compatible with our type term notation.
+And \texttt{map} in Haskell with this type is polymorphic in both its type variables \texttt{a}
+and \texttt{b}. So if we need to translate this Haskell type to Hindley-Milner type, we must prepend a quantification for each type variable occurring in the type:
+
+$\forall a . (\forall b . (a \ar b) \ar (\op{List}~a) \ar (\op{List}~b))$
+
+Which is abbreviated (similarly as with lambda abstractions) as:
+
+$\forall a\,b\,.\,(a \ar b) \ar (\op{List}~a) \ar (\op{List}~b)$
+
+Or even closer to our conventions as (because when something is bounded we can rename in the similar fashion as with lambda abstractions bounding program variables):
+
+$\forall \alpha\,\beta\,.\,(\alpha \ar \beta) \ar (\op{List}~\alpha) \ar (\op{List}~\beta)$
+
+~
+
+So what is the purpose of free type variables?
+
+We may say that in Hindley-Milner algorithm the type variables are used for two different purposes, depending on whether they are free or bound by $\forall$ quantifier.
+
+The bound variables act as we know them from Haskell, the tricky part are the free variables.
+
+\red{specifiy the convetions regarding $\sigma$ for poly-types (wel more precisely any-type) and  $\tau$ for mono-types}
+
+\red{Odtud to dál zprocesovat...}
+
+We demonstrate the difference 
+on an example type $\tau = (\alpha \ar \beta)$ and $\sigma = (\forall \alpha \beta . \alpha \ar \beta)$:
+\begin{itemize}
+\item There is no program expression $e$ such that $e : \forall \alpha \beta . \alpha \ar \beta$, because it would be a polymorphic function magically converting values between every pair of types.
+\item On the other hand statement $e : \alpha \ar \beta$ tells us only that $e$ is some function, we don't know yet, which specific types will stand for $\alpha$ and $\beta$. It corresponds to a more intermediate result.    
+
+\red{TODO: formulate more precisely/correctly...}
+\end{itemize}
+
+
+
+
+
+\section{Type Substitutions}
+
+
 
 \red{definition} ; \red{informally explain: makes a type more specific} ; \red{as function} ; \red{can be composed by $\circ$}
+
+
 
 \section{Contexts}
 
@@ -235,54 +338,7 @@ A \textit{context} is set of declarations with distinct term symbols.\footnote{I
 
 
 
-
-\section{Inference rules}
-
-\texttt{TAUT} rule:
-
-$$\unaRule{(x : \sigma) \in \Gamma}{ \Gamma \vdash x : \sigma}$$
-
-\texttt{COMB} rule:
-
-$$\binRule{\Gamma \vdash e_1 : \tau_1 \ar \tau_2}{\Gamma \vdash e_2 : \tau_1}
-{\Gamma \vdash (e_1~e_2) : \tau_2}$$
-
-\texttt{ABS} rule:
-
-$$\unaRule{\Gamma_x,x:\tau_1 \vdash e : \tau_2}
-{\Gamma \vdash (\lambda x . e) :  \tau_1 \ar \tau_2}$$
-
-\texttt{LET} rule:
-
-$$\binRule{\Gamma \vdash e_1 : \sigma}{\Gamma_x,x:\sigma \vdash e_2 : \tau}
-{\Gamma \vdash (\letin{x}{e_1}{e_2}) :  \tau}$$
-
-\texttt{INST} rule:
-
-$$\binRule{\Gamma \vdash e : \sigma}{\sigma \sqsupseteq \sPr}
-{\Gamma \vdash e : \sPr}$$
-
-\texttt{GEN} rule:
-
-$$\binRule{\Gamma \vdash e : \sigma}{\alpha \notin \op{FTV}(\Gamma)}
-{\Gamma \vdash e : \forall \alpha . \sigma}$$
-
-$\sqsupseteq$ rule:
-
-$$\binRule{\beta_i \notin \op{FTV}(\forall \overline{\alpha}.\tau)}
-{\tauPr = \{\overline{\alpha} \mapsto \overline{\tau}\}(\tau)}
-{\forall \overline{\alpha}.\tau  ~ \sqsupseteq ~   \forall \overline{\beta}.\tauPr}$$
-
-$\sqsupseteq$ rule, hopefully more readable:
-
-$$\triRule{\beta_i \notin \op{FTV}(\forall \alpha_1\dots\alpha_n.\tau) \text{ for } i \in \{1,\dots,k\}}
-{\tauPr = \{ \alpha_1 \mapsto \tau_1,  \dots, \alpha_n \mapsto \tau_n \}(\tau)}
-{n,k \geq 0}
-{\forall \alpha_1\dots\alpha_n.\tau  ~ \sqsupseteq ~   \forall \beta_1\dots\beta_k.\tauPr}$$
-
-
-
-\section{Hindley-Milner algorithm W}
+\section{Hindley-Milner Algorithm W}
 
 The Hindley-Milner algorithm $\W$ is used for type inference.
 Loosely speaking, we give to $\W$ as an input 
@@ -518,17 +574,56 @@ And therefore:
 
 We get an unsurprising result:
 $$\emptyset \vdash (\letin{f}{\lambda x . x}{f~f}) : \beta_3 \ar \beta_3$$
-~
-
-~
-
-\red{todo}
 
 
+\section{Inference Rules}
+
+\texttt{TAUT} rule:
+
+$$\unaRule{(x : \sigma) \in \Gamma}{ \Gamma \vdash x : \sigma}$$
+
+\texttt{COMB} rule:
+
+$$\binRule{\Gamma \vdash e_1 : \tau_1 \ar \tau_2}{\Gamma \vdash e_2 : \tau_1}
+{\Gamma \vdash (e_1~e_2) : \tau_2}$$
+
+\texttt{ABS} rule:
+
+$$\unaRule{\Gamma_x,x:\tau_1 \vdash e : \tau_2}
+{\Gamma \vdash (\lambda x . e) :  \tau_1 \ar \tau_2}$$
+
+\texttt{LET} rule:
+
+$$\binRule{\Gamma \vdash e_1 : \sigma}{\Gamma_x,x:\sigma \vdash e_2 : \tau}
+{\Gamma \vdash (\letin{x}{e_1}{e_2}) :  \tau}$$
+
+\texttt{INST} rule:
+
+$$\binRule{\Gamma \vdash e : \sigma}{\sigma \sqsupseteq \sPr}
+{\Gamma \vdash e : \sPr}$$
+
+\texttt{GEN} rule:
+
+$$\binRule{\Gamma \vdash e : \sigma}{\alpha \notin \op{FTV}(\Gamma)}
+{\Gamma \vdash e : \forall \alpha . \sigma}$$
+
+$\sqsupseteq$ rule:
+
+$$\binRule{\beta_i \notin \op{FTV}(\forall \overline{\alpha}.\tau)}
+{\tauPr = \{\overline{\alpha} \mapsto \overline{\tau}\}(\tau)}
+{\forall \overline{\alpha}.\tau  ~ \sqsupseteq ~   \forall \overline{\beta}.\tauPr}$$
+
+The same $\sqsupseteq$ rule again, hopefully more readable:
+
+$$\triRule{\beta_i \notin \op{FTV}(\forall \alpha_1\dots\alpha_n.\tau) \text{ for } i \in \{1,\dots,k\}}
+{\tauPr = \{ \alpha_1 \mapsto \tau_1,  \dots, \alpha_n \mapsto \tau_n \}(\tau)}
+{n,k \geq 0}
+{\forall \alpha_1\dots\alpha_n.\tau  ~ \sqsupseteq ~   \forall \beta_1\dots\beta_k.\tauPr}$$
 
 
 
-\subsection{Correctness and completeness of W}
+
+\subsection{Correctness and Completeness of W}
 
 ~
 
@@ -556,12 +651,11 @@ and $R\overline{(S(\Gamma))}(\tau) \sqsupseteq \tauPr$.
 The correctness theorem states that if $\W$ finds a solution, then the solution is correct.
 The first part of the completeness theorem, states that if there is a solution, then $\W$ finds one. And the second part formally states that the found solution $(S,\tau)$ is the most general one, by comparing it with an arbitrary solution $(\SPr,\tauPr)$. The substitution $R$ acts as a witness of the fact that we can obtain $\SPr$ by making $S$ more specific ($\SPr = R \circ S$).  
 
-\red{Než bude možno vysvětlit druhou část dvojky, je třeba zavést ten closure overline někde vejš}
+\red{Before it is possible to explain the second part of point two, it is necessary to introduce  the "closure overline" somewhere above.}
 
-~
 
-\section{Unification algorithm}
-\red{todo: some comment}
+\section{Unification Algorithm}
+\red{todo: Add some explanation here!}
 
 \Pseudokod{Algorithm finding the most general unification.}
 {\textbf{MGU}($\tau_1$, $\tau_2$)}{
