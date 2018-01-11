@@ -43,7 +43,7 @@
 
 %\usepackage{enumitem}
 
-\title{Some FP lecture notes (v0.5)}
+\title{Some FP lecture notes (v0.6)}
 
 \author{Tomáš Křen}
 
@@ -192,30 +192,28 @@
 
 \chapter{Hindley-Milner Type System}
 
-\red{\textbf{Still work in progress... but the sections about Hindley-Milner algorithm W are almost OK now.}}
+\red{The text is not completely finished, but hopefully the sections dealing with the Hindley-Milner algorithm $\W$ are sufficiently understandable.}
 
 
 \section*{TODO list}
 
 \red{
 \begin{itemize}
-\item Describe substitutions
-\item Textually describe unification algorithm
 \item Define rest of the context stuff
-\item In W definition : need to comment the need for fresh type variables $\beta$s
-\item In W definition : need to comment that when sub-call fail, then also the calling computation fails
+\item Textually describe unification algorithm
+\item In W comment for each case what is going on.
 \item write Intro
 \end{itemize}
 }
 
 \section{Introduction}
 
-\red{Why Hindley-Milner (= simplified system F capable of type inference in curry style)}
+\red{Todo: Why Hindley-Milner? (= simplified system F capable of type inference in curry style).}
 
 \section{Type Language}
 \label{sec:typelang}
 
-\red{replace simple-type with mono-type}
+\red{TODO probably replace simple-type with mono-type}
 
 A type system connects a type language with a program language.
 In this section we present the type language (i.e. what are legal type expressions and what are they supposed to mean) used in Hindley-Milner type system.
@@ -298,9 +296,8 @@ We may say that in Hindley-Milner algorithm the type variables are used for two 
 
 The bound variables act as we know them from Haskell, the tricky part are the free variables.
 
-\red{specifiy the convetions regarding $\sigma$ for poly-types (wel more precisely any-type) and  $\tau$ for mono-types}
+\red{TODO specifiy the convetions regarding $\sigma$ for poly-types (well more precisely any-type) and  $\tau$ for mono-types}
 
-\red{Odtud to dál zprocesovat...}
 
 We demonstrate the difference 
 on an example type $\tau = (\alpha \ar \beta)$ and $\sigma = (\forall \alpha \beta . \alpha \ar \beta)$:
@@ -308,7 +305,7 @@ on an example type $\tau = (\alpha \ar \beta)$ and $\sigma = (\forall \alpha \be
 \item There is no program expression $e$ such that $e : \forall \alpha \beta . \alpha \ar \beta$, because it would be a polymorphic function magically converting values between every pair of types.
 \item On the other hand statement $e : \alpha \ar \beta$ tells us only that $e$ is some function, we don't know yet, which specific types will stand for $\alpha$ and $\beta$. It corresponds to a more intermediate result.    
 
-\red{TODO: formulate more precisely/correctly...}
+\red{TODO: formulate more precisely...}
 \end{itemize}
 
 
@@ -317,22 +314,50 @@ on an example type $\tau = (\alpha \ar \beta)$ and $\sigma = (\forall \alpha \be
 
 \section{Type Substitutions}
 
+Generally speaking, a substitution is a function used for replacement 
+of variables in an expression by some other expression.
+Substitution is used both in program expressions 
+(e.g. it is the core of $\beta$-reduction) and type expressions.
+Here we will be dealing with substitutions on the type level. 
+
+A type substitution is a finite mapping from type variables to types.
+It is usually denoted as a collection of $key \mapsto value$ pairs.
+The general form is:
+
+$$\{ \alpha_1 \mapsto \tau_1, \alpha_2 \mapsto \tau_2, \dots, \alpha_n \mapsto \tau_n \}$$ 
+
+For example, let 
+
+$S = \{ \alpha_3 \mapsto \op{Int}, 
+\beta_3 \mapsto (\op{List}~\alpha_6),
+\alpha_5 \mapsto \beta_1, 
+\beta_{23} \mapsto (\alpha_3 \ar \beta_1) \}$ 
+and 
+
+$\tau = ((\alpha_3 \ar \alpha_5) \ar ( \beta_1  \ar (\op{List}~\alpha_6) ) )$,
+then 
+
+$\tauPr = S(\tau) = ((\op{Int} \ar \beta_1) \ar (\beta_1  \ar (\op{List}~\alpha_6) ) )$.
+
+Generally, by applying a substitution $S$ to type $\tau$, we get a \textit{more specific} type $\tauPr = S(\tau)$.
+
+A special (but often seen, e.g. in Hindley-Milner algorithm) case of substitution is an
+empty substitution, denoted as $\{\}$, having no effect when applied; 
+i.e. $\{\}(\tau) = \tau$.
 
 
-\red{definition} ; \red{informally explain: makes a type more specific} ; \red{as function} ; \red{can be composed by $\circ$}
+Because substitutions can be dealt with as with functions, we can compose them using composition operator $\circ$. Let $R = S_2 \circ S_1$, then 
+$R(\tau) = (S_2 \circ S_1)(\tau) = S_2 ( S_1(\tau) )$. 
 
 
 
-\section{Contexts}
+\section{Typing Contexts}
 
 \begin{definition}
 A $\mathit{term:type}$ statement $\mathit{M}:\mathit{\tau}$ states that (program) term $M$ has type $\tau$.   
 A \textit{declaration} is a statement $s : \tau$ where $s$ is a term symbol and $\tau$ is a type.
 A \textit{context} is set of declarations with distinct term symbols.\footnote{Interestingly, the definition of a \textit{context} and definition of a \textit{substitution} are almost the same. The difference is that "keys" in a context are term symbols/variables, whereas substitution "keys" are type variables. Maybe this fact could be utilized in an interesting way...}
 \end{definition}
-
-
-\red{building symbols}
 
 \red{def $\Gamma_x$} ; \red{def $\overline{\Gamma}(\tau)$}
 
@@ -428,9 +453,9 @@ Here we present a recursive definition of $\W$ algorithm based on case analysis 
 
 ~
 
-\red{need to comment the need for fresh type variables $\beta$s}
+Whenever there is a type variable $\beta$ (or $\beta_i$) it is meant to be a \textit{new fresh type variable}, that has not occurred anywhere in $\Gamma$ or during the computation of some other sub-expression. Namely, fresh type variables $\beta$ are introduced in cases \textbf{(1)}, \textbf{(2)} and \textbf{(3)}. 
 
-\red{need to comment that when sub call fail, then also the calling computation fails}
+During the computation of cases \textbf{(2)}, \textbf{(3)} and \textbf{(4)} there is a recursive call to $\W$ which can possibly fail; whenever a recursive call fails, then also the calling computation fails.
 
 ~
 
@@ -619,7 +644,6 @@ $$\triRule{\beta_i \notin \op{FTV}(\forall \alpha_1\dots\alpha_n.\tau) \text{ fo
 {\tauPr = \{ \alpha_1 \mapsto \tau_1,  \dots, \alpha_n \mapsto \tau_n \}(\tau)}
 {n,k \geq 0}
 {\forall \alpha_1\dots\alpha_n.\tau  ~ \sqsupseteq ~   \forall \beta_1\dots\beta_k.\tauPr}$$
-
 
 
 
