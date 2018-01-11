@@ -6,6 +6,10 @@ Lecture on Thursday 12:10 in SU1.
 Resources
 ---------
 
+### Some lecture notes
+
+- We have prepared [some lecture notes](https://github.com/vituscze/fp/blob/master/FP-lecture-notes.pdf), mostly for the Hindley-Milner type system.
+
 ### Haskell
 
 - [Learn You a Haskell for Great Good](http://learnyouahaskell.com/)
@@ -49,3 +53,8 @@ Programming task
   - Or you can choose alternative (or bonus) approach: Avoid problems dealing with bound variables by using *abstraction elimination* to transform lambda terms to simpler combinator terms. See [wikipedia article on combinatory logic](https://en.wikipedia.org/wiki/Combinatory_logic) containing description of the *abstraction elimination* technique discussed on the lecture (section Combinatory calculi -> Completeness of the S-K basis).
 
 - Implement the *normal reduction strategy*.
+
+### Homework #2
+
+- Implement Hindley-Milner algorithm W (see the [lecture notes](https://github.com/vituscze/fp/blob/master/FP-lecture-notes.pdf) for more information).
+
